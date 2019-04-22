@@ -149,7 +149,7 @@ char *post_to_server(int deviceID, char *post_data)
 	/* Go for it!  Note that without an additional arg, this does a GET */
 	err = esp_http_client_perform(client);
 	if (err != ESP_OK) { 
-		printf("HTTP POST to %s failed: %s\n", post_function, esp_err_to_name(err));
+	//	printf("HTTP POST to %s failed: %s\n", post_function, esp_err_to_name(err));
 		/* 
 		 * uhhhhh - how about we DO something if this failed... 
 		 * oh wait, what if the server just isn't up yet... or went down? 
@@ -161,7 +161,7 @@ char *post_to_server(int deviceID, char *post_data)
 	esp_http_client_cleanup(client);
 
 	/* We should have a response by now.... this feels sketchy. FIXME Need certainly here */
-	printf("REST API response: 0x%x\n", atoi(rxd_http_response.data));
+	//printf("REST API response: 0x%x\n", atoi(rxd_http_response.data));
 
 	return rxd_http_response.data;
 }

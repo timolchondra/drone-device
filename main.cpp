@@ -66,7 +66,10 @@ static ccs811_sensor_t* sensor;
 SemaphoreHandle_t xSemaphore;
 
 //const char *server_ip_address = "10.0.0.229";
-const char *server_ip_address           = "192.168.1.154";
+//const char *server_ip_address           = "192.168.1.154";
+
+//Fablab IP from my laptop
+const char *server_ip_address = "192.168.1.117";
 
 //Matt's IP address for Drone
 //const char *server_ip_address = "192.168.42.33";
@@ -131,7 +134,7 @@ void post_task(void *args) {
            
             xSemaphoreGive( xSemaphore);
           // printf("I am here\n");
-           vTaskDelay(100/portTICK_PERIOD_MS);
+           vTaskDelay(300/portTICK_PERIOD_MS);
         }
     }
 }
@@ -179,15 +182,22 @@ void grove_task(void *args) {
  //   printf(" ppm\n");
 
     readGrove.no2 = gas.measure_NO2();
+    
+    vTaskDelay(1);
     readGrove.c3h8 = gas.measure_C3H8();
+    vTaskDelay(1);
     readGrove.c4h10 = gas.measure_C4H10();
-    readGrove.ch4 = gas.measure_CH4();
-    readGrove.h2 = gas.measure_H2();
-    readGrove.c2h5oh = gas.measure_C2H5OH();
+    vTaskDelay(1);
 
+    readGrove.ch4 = gas.measure_CH4();
+    vTaskDelay(1);
+    readGrove.h2 = gas.measure_H2();
+    vTaskDelay(1);
+    readGrove.c2h5oh = gas.measure_C2H5OH();
+    vTaskDelay(1);
     groveQueue.push(readGrove);
     xSemaphoreGive(xSemaphore);
-    vTaskDelay(100/portTICK_PERIOD_MS);
+    vTaskDelay(300/portTICK_PERIOD_MS);
   } 
 
 
@@ -205,7 +215,7 @@ void gps_task(void *args) {
             readGPS.lon = myGPS.lon;
             gpsQueue.push(readGPS);
             xSemaphoreGive( xSemaphore);
-            vTaskDelay(100/portTICK_PERIOD_MS);
+            vTaskDelay(300/portTICK_PERIOD_MS);
             //printf("hehe xD\n");
 
        }
@@ -243,9 +253,16 @@ extern "C" void app_main(void) {
       xSemaphore = xSemaphoreCreateMutex();
       printf("ESP ID: %d\n", deviceID);
       //xTaskCreatePinnedToCore(CCS811_task,"CCS811_task", TASK_STACK_DEPTH, NULL, 2, NULL,0);
+//      xTaskCreate(grove_task, "grove_task", TASK_STACK_DEPTH, NULL, 2, NULL);
+//      xTaskCreate(gps_task, "gps_task",TASK_STACK_DEPTH, NULL, 2, NULL);
+//      xTaskCreate(post_task, "post_task", 4042, NULL, 2, NULL);       //need larger stack for task to post data
+        
+
       xTaskCreatePinnedToCore(grove_task, "grove_task", TASK_STACK_DEPTH, NULL, 2, NULL, 1);
-      xTaskCreatePinnedToCore(gps_task, "gps_task",TASK_STACK_DEPTH, NULL, 2, NULL,0);
-      xTaskCreatePinnedToCore(post_task, "post_task", 4042, NULL, 2, NULL,1);       //need larger stack for task to post data
+      xTaskCreatePinnedToCore(gps_task, "gps_task",TASK_STACK_DEPTH, NULL, 2, NULL,1);
+      xTaskCreatePinnedToCore(post_task, "post_task", 4042, NULL, 2, NULL,0);       //need larger stack for task to post data
+
+
 
     } else {
       printf("fail to init sensor\n");
