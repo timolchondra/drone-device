@@ -114,6 +114,7 @@ void post_task(void *args) {
     groveData Grove;
     gpsData GPS;
     char *msg;
+    int firstPost = 0;
 
     while(1) {
         if(xSemaphoreTake(xSemaphore, (TickType_t) 10) == pdTRUE) {
@@ -126,15 +127,28 @@ void post_task(void *args) {
 
                 msg = form_update_message(deviceID, Grove.co, Grove.nh3, Grove.no2, Grove.c3h8, Grove.c4h10, Grove.ch4, Grove.h2, Grove.c2h5oh, GPS.lat, GPS.lon);
                 //printf("%s\n", msg);
-                post_to_server(deviceID, msg);
+               
+
+                //first post always has to send the message to /register to register the drone
+
+                if(firstPost == 0) {
+                    post_to_server(deviceID, msg, firstPost);
+                    firstPost = 1;
+                    free(msg);
+                    msg = NULL;
+                } else {
+
+                post_to_server(deviceID, msg, firstPost);
                 free(msg);
                 msg = NULL;
+
+                }
             }
 
            
             xSemaphoreGive( xSemaphore);
           // printf("I am here\n");
-           vTaskDelay(300/portTICK_PERIOD_MS);
+           vTaskDelay(100/portTICK_PERIOD_MS);
         }
     }
 }
@@ -174,9 +188,12 @@ void grove_task(void *args) {
     //if(c>=0) printf("%f",c);
     //else printf("invalid");
     //printf(" ppm\n");
+    vTaskDelay(1);
 
     readGrove.co = gas.measure_CO();
-//    printf("The concetration of CO is ");
+    vTaskDelay(1);
+    
+    //    printf("The concetration of CO is ");
  //   if(readGrove.co>=0) printf("%f", readGrove.co);
  //   else printf("invalid");
  //   printf(" ppm\n");
@@ -197,7 +214,7 @@ void grove_task(void *args) {
     vTaskDelay(1);
     groveQueue.push(readGrove);
     xSemaphoreGive(xSemaphore);
-    vTaskDelay(300/portTICK_PERIOD_MS);
+    vTaskDelay(100/portTICK_PERIOD_MS);
   } 
 
 
@@ -215,7 +232,7 @@ void gps_task(void *args) {
             readGPS.lon = myGPS.lon;
             gpsQueue.push(readGPS);
             xSemaphoreGive( xSemaphore);
-            vTaskDelay(300/portTICK_PERIOD_MS);
+            vTaskDelay(100/portTICK_PERIOD_MS);
             //printf("hehe xD\n");
 
        }

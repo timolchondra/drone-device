@@ -122,14 +122,18 @@ void get_from_server()
 	//printf("REST API response: %s\n", rxd_http_response.data);
 }
 
-char *post_to_server(int deviceID, char *post_data)
+char *post_to_server(int deviceID, char *post_data, int firstPost)
 {
 	esp_http_client_config_t rest_server_config;
 	char url[URL_SIZE];
 	const char *post_function;
 	esp_err_t err;
    
-    post_function = "/update";
+
+    if(firstPost == 0) 
+        post_function = "/register";
+    else
+        post_function = "/update";
 
 
 	memset(&rest_server_config, 0, sizeof(esp_http_client_config_t));
@@ -161,7 +165,6 @@ char *post_to_server(int deviceID, char *post_data)
 	esp_http_client_cleanup(client);
 
 	/* We should have a response by now.... this feels sketchy. FIXME Need certainly here */
-	//printf("REST API response: 0x%x\n", atoi(rxd_http_response.data));
-
+	printf("REST API response: 0x%x\n", atoi(rxd_http_response.data));
 	return rxd_http_response.data;
 }
