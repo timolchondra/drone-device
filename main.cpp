@@ -69,10 +69,10 @@ static ccs811_sensor_t* sensor;
 SemaphoreHandle_t xSemaphore;
 
 //const char *server_ip_address = "10.0.0.229";
-//const char *server_ip_address           = "192.168.1.154";
+const char *server_ip_address           = "192.168.1.154";
 
 //Fablab IP from my laptop
-const char *server_ip_address = "192.168.1.117";
+//const char *server_ip_address = "192.168.1.117";
 
 //Matt's IP address for Drone
 //const char *server_ip_address = "192.168.42.33";
@@ -114,7 +114,7 @@ queue<ccs811Data> ccs811Queue;
 queue<gpsData> gpsQueue;
 //queue<groveData> groveQueue;
 
-/*
+
 void post_task(void *args) {
  //   groveData Grove;
     gpsData GPS;
@@ -125,7 +125,7 @@ void post_task(void *args) {
 
     while(1) {
         if(xSemaphoreTake(xSemaphore, (TickType_t) 10) == pdTRUE) {
-           if(!groveQueue.empty() && !gpsQueue.empty()) {
+           if(!ccs811Queue.empty() && !gpsQueue.empty()) {
                 //Grove = groveQueue.front();
                CCS811 = ccs811Queue.front(); 
                GPS = gpsQueue.front();
@@ -135,7 +135,8 @@ void post_task(void *args) {
                 ccs811Queue.pop();
                 gpsQueue.pop();
 
-                msg = form_update_message(deviceID, Grove.co, Grove.nh3, Grove.no2, Grove.c3h8, Grove.c4h10, Grove.ch4, Grove.h2, Grove.c2h5oh, GPS.lat, GPS.lon);
+                msg = form_update_message(deviceID, CCS811.CO2, CCS811.TVOC, GPS.lat, GPS.lon);
+
                 //printf("%s\n", msg);
                
 
@@ -162,7 +163,7 @@ void post_task(void *args) {
         }
     }
 }
-*/
+
 void CCS811_task(void *args) {
     uint16_t tvoc;
     uint16_t eco2;
@@ -253,7 +254,7 @@ void gps_task(void *args) {
 
 extern "C" void app_main(void) {
      initArduino();
-     /*
+     
      esp_err_t ret = nvs_flash_init();
       if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());
@@ -267,12 +268,12 @@ extern "C" void app_main(void) {
      app_wifi_wait_connected();
 
     vTaskDelay(1);
-  */ 
+   
  // init_i2c(); 
     esp_err_t gpsStatus = init_gps(&myGPS);
 
-    i2c_init(I2C_BUS, (gpio_num_t) i2c_scl_pin, (gpio_num_t) i2c_sda_pin, I2C_FREQ);
-    sensor = ccs811_init_sensor (I2C_BUS, CCS811_I2C_ADDRESS_2);
+    i2c_init(I2C_NUM_0, (gpio_num_t) i2c_scl_pin, (gpio_num_t) i2c_sda_pin, I2C_FREQ);
+    sensor = ccs811_init_sensor (I2C_NUM_0, CCS811_I2C_ADDRESS_2);
     ccs811_set_mode (sensor, ccs811_mode_1s);
 
     //gas.begin(0x04);
@@ -292,7 +293,7 @@ extern "C" void app_main(void) {
 
       xTaskCreatePinnedToCore(CCS811_task,"CCS811_task", TASK_STACK_DEPTH, NULL, 2, NULL,1);
       xTaskCreatePinnedToCore(gps_task, "gps_task",TASK_STACK_DEPTH, NULL, 2, NULL,1);
-      //xTaskCreatePinnedToCore(post_task, "post_task", 4042, NULL, 2, NULL,0);       //need larger stack for task to post data
+      xTaskCreatePinnedToCore(post_task, "post_task", 4042, NULL, 2, NULL,0);       //need larger stack for task to post data
 
 
 
