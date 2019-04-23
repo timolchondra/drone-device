@@ -66,10 +66,10 @@ static ccs811_sensor_t* sensor;
 SemaphoreHandle_t xSemaphore;
 
 //const char *server_ip_address = "10.0.0.229";
-//const char *server_ip_address           = "192.168.1.154";
+const char *server_ip_address           = "192.168.1.154";
 
 //Fablab IP from my laptop
-const char *server_ip_address = "192.168.1.117";
+//const char *server_ip_address = "192.168.1.117";
 
 //Matt's IP address for Drone
 //const char *server_ip_address = "192.168.42.33";
@@ -122,8 +122,6 @@ void post_task(void *args) {
                 Grove = groveQueue.front();
                 GPS = gpsQueue.front();
 
-                groveQueue.pop();
-                gpsQueue.pop();
 
                 msg = form_update_message(deviceID, Grove.co, Grove.nh3, Grove.no2, Grove.c3h8, Grove.c4h10, Grove.ch4, Grove.h2, Grove.c2h5oh, GPS.lat, GPS.lon);
                 //printf("%s\n", msg);
@@ -135,12 +133,10 @@ void post_task(void *args) {
                     post_to_server(deviceID, msg, firstPost);
                     firstPost = 1;
                     free(msg);
-                    msg = NULL;
                 } else {
 
                 post_to_server(deviceID, msg, firstPost);
                 free(msg);
-                msg = NULL;
 
                 }
             }
@@ -242,6 +238,7 @@ void gps_task(void *args) {
 
 extern "C" void app_main(void) {
      initArduino();
+     
      esp_err_t ret = nvs_flash_init();
       if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());
