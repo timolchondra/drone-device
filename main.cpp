@@ -57,10 +57,13 @@ extern "C" {
 
 #define TASK_STACK_DEPTH 2048
 
-#define I2C_FREQ      I2C_FREQ_100K
+#define I2C_FREQ I2C_FREQ_100K
+#define I2C_BUS 1
+#define i2c_scl_pin     22
+#define i2c_sda_pin     21
 
-using namespace std;
 
+using namespace std; 
 struct gps_position myGPS; 
 static ccs811_sensor_t* sensor;
 SemaphoreHandle_t xSemaphore;
@@ -81,13 +84,13 @@ const int   server_webserver_port       = 8080;
 //static const char *TAG = "wifi station";
 int deviceID = 1;
 
-/*
+
 struct ccs811Data {
     int TVOC;
     int CO2;
 };
-*/
 
+/*
 struct groveData {
     float co;
     float nh3;
@@ -100,29 +103,36 @@ struct groveData {
 
 
 };
+*/
 
 struct gpsData {
     double lat;
     double lon;
 };
 
-//queue<ccs811Data> ccs811Queue;
+queue<ccs811Data> ccs811Queue;
 queue<gpsData> gpsQueue;
-queue<groveData> groveQueue;
+//queue<groveData> groveQueue;
 
+/*
 void post_task(void *args) {
-    groveData Grove;
+ //   groveData Grove;
     gpsData GPS;
+    ccs811Data CCS811;
+
     char *msg;
     int firstPost = 0;
 
     while(1) {
         if(xSemaphoreTake(xSemaphore, (TickType_t) 10) == pdTRUE) {
            if(!groveQueue.empty() && !gpsQueue.empty()) {
-                Grove = groveQueue.front();
-                GPS = gpsQueue.front();
-
-                groveQueue.pop();
+                //Grove = groveQueue.front();
+               CCS811 = ccs811Queue.front(); 
+               GPS = gpsQueue.front();
+                
+                //groveQueue.pop();
+                
+                ccs811Queue.pop();
                 gpsQueue.pop();
 
                 msg = form_update_message(deviceID, Grove.co, Grove.nh3, Grove.no2, Grove.c3h8, Grove.c4h10, Grove.ch4, Grove.h2, Grove.c2h5oh, GPS.lat, GPS.lon);
@@ -152,8 +162,8 @@ void post_task(void *args) {
         }
     }
 }
-
-/*void CCS811_task(void *args) {
+*/
+void CCS811_task(void *args) {
     uint16_t tvoc;
     uint16_t eco2;
     ccs811Data readCCS811;
@@ -164,7 +174,7 @@ void post_task(void *args) {
     {
         if(xSemaphoreTake( xSemaphore, ( TickType_t ) 10 )==pdTRUE) {
             if (ccs811_get_results (sensor, &tvoc, &eco2, 0, 0)) {
-            //    printf("%.3f CCS811 Sensor periodic: TVOC %d ppb, eCO2 %d ppm\n", (double)sdk_system_get_time()*1e-3, tvoc, eco2);
+                printf("%.3f CCS811 Sensor periodic: TVOC %d ppb, eCO2 %d ppm\n", (double)sdk_system_get_time()*1e-3, tvoc, eco2);
             
                 readCCS811.TVOC = tvoc;
                 readCCS811.CO2 = eco2;
@@ -173,12 +183,12 @@ void post_task(void *args) {
 
             }
              xSemaphoreGive( xSemaphore);
-             vTaskDelay(300/portTICK_PERIOD_MS);
+             vTaskDelay(100/portTICK_PERIOD_MS);
         }
         // passive waiting until 1 second is over
     }
 }
-*/
+/*
 void grove_task(void *args) {
    groveData readGrove;
 
@@ -219,6 +229,7 @@ void grove_task(void *args) {
 
 
 }
+*/
 void gps_task(void *args) {
     gpsData readGPS;
     TickType_t last_wakeup = xTaskGetTickCount();
@@ -242,6 +253,7 @@ void gps_task(void *args) {
 
 extern "C" void app_main(void) {
      initArduino();
+     /*
      esp_err_t ret = nvs_flash_init();
       if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());
@@ -255,29 +267,32 @@ extern "C" void app_main(void) {
      app_wifi_wait_connected();
 
     vTaskDelay(1);
-   
+  */ 
  // init_i2c(); 
     esp_err_t gpsStatus = init_gps(&myGPS);
-   // sensor = ccs811_init_sensor (I2C_MASTER_NUM, CCS811_I2C_ADDRESS_2);
-   // ccs811_set_mode (sensor, ccs811_mode_1s);
 
-    gas.begin(0x04);
-    gas.powerOn();
-  vTaskDelay(10);
-  gpsStatus = ESP_OK;
+    i2c_init(I2C_BUS, (gpio_num_t) i2c_scl_pin, (gpio_num_t) i2c_sda_pin, I2C_FREQ);
+    sensor = ccs811_init_sensor (I2C_BUS, CCS811_I2C_ADDRESS_2);
+    ccs811_set_mode (sensor, ccs811_mode_1s);
+
+    //gas.begin(0x04);
+    //gas.powerOn();
+    vTaskDelay(10);
+    gpsStatus = ESP_OK;
     if(gpsStatus == ESP_OK){
       
       xSemaphore = xSemaphoreCreateMutex();
       printf("ESP ID: %d\n", deviceID);
-      //xTaskCreatePinnedToCore(CCS811_task,"CCS811_task", TASK_STACK_DEPTH, NULL, 2, NULL,0);
 //      xTaskCreate(grove_task, "grove_task", TASK_STACK_DEPTH, NULL, 2, NULL);
 //      xTaskCreate(gps_task, "gps_task",TASK_STACK_DEPTH, NULL, 2, NULL);
 //      xTaskCreate(post_task, "post_task", 4042, NULL, 2, NULL);       //need larger stack for task to post data
         
 
-      xTaskCreatePinnedToCore(grove_task, "grove_task", TASK_STACK_DEPTH, NULL, 2, NULL, 1);
+     // xTaskCreatePinnedToCore(grove_task, "grove_task", TASK_STACK_DEPTH, NULL, 2, NULL, 1);
+
+      xTaskCreatePinnedToCore(CCS811_task,"CCS811_task", TASK_STACK_DEPTH, NULL, 2, NULL,1);
       xTaskCreatePinnedToCore(gps_task, "gps_task",TASK_STACK_DEPTH, NULL, 2, NULL,1);
-      xTaskCreatePinnedToCore(post_task, "post_task", 4042, NULL, 2, NULL,0);       //need larger stack for task to post data
+      //xTaskCreatePinnedToCore(post_task, "post_task", 4042, NULL, 2, NULL,0);       //need larger stack for task to post data
 
 
 
