@@ -68,7 +68,7 @@ static ccs811_sensor_t* sensor;
 SemaphoreHandle_t xSemaphore;
 
 //const char *server_ip_address = "10.0.0.229";
-const char *server_ip_address           = "192.168.1.154";
+//const char *server_ip_address           = "192.168.1.154";
 
 //Fablab IP from my laptop
 //const char *server_ip_address = "192.168.1.117";
