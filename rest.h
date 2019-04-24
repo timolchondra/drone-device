@@ -25,5 +25,5 @@ struct http_response_data {
 void get_from_server(void);
 char *post_to_server(int deviceID, char *post_data, int firstPost);
 
-char *form_update_message(int id, float co, float nh3, float no2, float c3h8, float c4h10, float ch4, float h2, float c2h5oh, double lat, double lon );
+char *form_update_message(int id, int co2, int tvoc, double lat, double lon);
 #endif
