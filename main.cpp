@@ -53,7 +53,6 @@ extern "C" {
 #include "MutichannelGasSensor.cpp"
 #include <queue>
 
-//this is a test comment for git
 
 #define TASK_STACK_DEPTH 2048
 
@@ -69,19 +68,18 @@ static ccs811_sensor_t* sensor;
 SemaphoreHandle_t xSemaphore;
 
 //const char *server_ip_address = "10.0.0.229";
-const char *server_ip_address           = "192.168.1.154";
+//const char *server_ip_address           = "192.168.1.154";
 
 //Fablab IP from my laptop
 //const char *server_ip_address = "192.168.1.117";
 
 //Matt's IP address for Drone
-//const char *server_ip_address = "192.168.42.33";
+const char *server_ip_address = "192.168.42.33";
 
-
+//my IP address for Drone
 //const char *server_ip_address = "192.168.42.77";
 const int   server_webserver_port       = 8080;
 
-//static const char *TAG = "wifi station";
 int deviceID = 1;
 
 
@@ -158,7 +156,6 @@ void post_task(void *args) {
 
            
             xSemaphoreGive( xSemaphore);
-          // printf("I am here\n");
            vTaskDelay(100/portTICK_PERIOD_MS);
         }
     }
@@ -238,14 +235,13 @@ void gps_task(void *args) {
     while(1) {
        if(xSemaphoreTake( xSemaphore, ( TickType_t ) 10 ) == pdTRUE) {
             get_gps_data(&myGPS);
-            //printf("%lf, %lf\n",myGPS.lat, myGPS.lon );
+            printf("%lf, %lf\n",myGPS.lat, myGPS.lon );
       
             readGPS.lat = myGPS.lat;
             readGPS.lon = myGPS.lon;
             gpsQueue.push(readGPS);
             xSemaphoreGive( xSemaphore);
             vTaskDelay(100/portTICK_PERIOD_MS);
-            //printf("hehe xD\n");
 
        }
 
@@ -266,31 +262,34 @@ extern "C" void app_main(void) {
   
      app_wifi_initialise();
      app_wifi_wait_connected();
-
+    
     vTaskDelay(1);
    
- // init_i2c(); 
     esp_err_t gpsStatus = init_gps(&myGPS);
 
     i2c_init(I2C_NUM_0, (gpio_num_t) i2c_scl_pin, (gpio_num_t) i2c_sda_pin, I2C_FREQ);
     sensor = ccs811_init_sensor (I2C_NUM_0, CCS811_I2C_ADDRESS_2);
-    ccs811_set_mode (sensor, ccs811_mode_1s);
+    
+    if(sensor) {
+         printf("CCS811 sensor has been initialized!\n");
+    } else {
+        printf("failed to init CCS811\n");
+    }
+
+
 
     //gas.begin(0x04);
     //gas.powerOn();
     vTaskDelay(10);
-    gpsStatus = ESP_OK;
-    if(gpsStatus == ESP_OK){
-      
+    if(gpsStatus == ESP_OK && sensor){
+      printf("Successfully initialized both sensors!\n"); 
+     
+      ccs811_set_mode (sensor, ccs811_mode_1s);
       xSemaphore = xSemaphoreCreateMutex();
       printf("ESP ID: %d\n", deviceID);
-//      xTaskCreate(grove_task, "grove_task", TASK_STACK_DEPTH, NULL, 2, NULL);
-//      xTaskCreate(gps_task, "gps_task",TASK_STACK_DEPTH, NULL, 2, NULL);
-//      xTaskCreate(post_task, "post_task", 4042, NULL, 2, NULL);       //need larger stack for task to post data
         
 
      // xTaskCreatePinnedToCore(grove_task, "grove_task", TASK_STACK_DEPTH, NULL, 2, NULL, 1);
-
       xTaskCreatePinnedToCore(CCS811_task,"CCS811_task", TASK_STACK_DEPTH, NULL, 2, NULL,1);
       xTaskCreatePinnedToCore(gps_task, "gps_task",TASK_STACK_DEPTH, NULL, 2, NULL,1);
       xTaskCreatePinnedToCore(post_task, "post_task", 4042, NULL, 2, NULL,0);       //need larger stack for task to post data
@@ -298,7 +297,6 @@ extern "C" void app_main(void) {
 
 
     } else {
-      printf("fail to init sensor\n");
       printf("ESP ID: %d\n", deviceID);
       pinMode(5,OUTPUT);
       digitalWrite(5,HIGH);
