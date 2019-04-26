@@ -245,21 +245,24 @@ void gps_task(void *args) {
 
      }
 }
-
-extern "C" void app_main(void) {
-     initArduino();
-     
-     esp_err_t ret = nvs_flash_init();
-      if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+void connectToWifi() {
+    esp_err_t ret = nvs_flash_init();
+    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());
         ret = nvs_flash_init();
-      }
-     ESP_ERROR_CHECK(ret);
+    }
+    ESP_ERROR_CHECK(ret);
     
-     ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
+    ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
   
-     app_wifi_initialise();
-     app_wifi_wait_connected();
+    app_wifi_initialise();
+    app_wifi_wait_connected();
+    
+}
+extern "C" void app_main(void) {
+    initArduino();
+
+    connectToWifi();  
     
     vTaskDelay(1);
    
@@ -280,24 +283,24 @@ extern "C" void app_main(void) {
     //gas.powerOn();
     vTaskDelay(10);
     if(gpsStatus == ESP_OK && sensor){
-      printf("Successfully initialized both sensors!\n"); 
+        printf("Successfully initialized both sensors!\n"); 
      
-      ccs811_set_mode (sensor, ccs811_mode_1s);
-      xSemaphore = xSemaphoreCreateMutex();
-      printf("ESP ID: %d\n", deviceID);
+        ccs811_set_mode (sensor, ccs811_mode_1s);
+        xSemaphore = xSemaphoreCreateMutex();
+        printf("ESP ID: %d\n", deviceID);
         
 
      // xTaskCreatePinnedToCore(grove_task, "grove_task", TASK_STACK_DEPTH, NULL, 2, NULL, 1);
-      xTaskCreatePinnedToCore(CCS811_task,"CCS811_task", TASK_STACK_DEPTH, NULL, 2, NULL,1);
-      xTaskCreatePinnedToCore(gps_task, "gps_task",TASK_STACK_DEPTH, NULL, 2, NULL,1);
-      xTaskCreatePinnedToCore(post_task, "post_task", 4042, NULL, 2, NULL,0);       //need larger stack for task to post data
+        xTaskCreatePinnedToCore(CCS811_task,"CCS811_task", TASK_STACK_DEPTH, NULL, 2, NULL,1);
+        xTaskCreatePinnedToCore(gps_task, "gps_task",TASK_STACK_DEPTH, NULL, 2, NULL,1);
+        xTaskCreatePinnedToCore(post_task, "post_task", 4042, NULL, 2, NULL,0);       //need larger stack for task to post data
 
 
 
     } else {
-      printf("ESP ID: %d\n", deviceID);
-      pinMode(5,OUTPUT);
-      digitalWrite(5,HIGH);
+        printf("ESP ID: %d\n", deviceID);
+        pinMode(5,OUTPUT);
+        digitalWrite(5,HIGH);
 
     }
 }
