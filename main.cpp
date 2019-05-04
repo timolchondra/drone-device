@@ -48,10 +48,9 @@ extern "C" {
 }
 #endif
 
-#include "Arduino.h"
-#include "MutichannelGasSensor.h"
-#include "MutichannelGasSensor.cpp"
-#include <queue>
+//#include "Arduino.h"
+#include "MultiChannelGasSensor.h"
+#include <stack>
 
 
 
@@ -60,16 +59,16 @@ extern "C" {
 #define I2C_FREQ      I2C_FREQ_100K
 
 using namespace std;
-
+MultiChannelGasSensor gas;
 struct gps_position myGPS; 
 static ccs811_sensor_t* sensor;
 SemaphoreHandle_t xSemaphore;
 
 //const char *server_ip_address = "10.0.0.229";
-const char *server_ip_address           = "192.168.1.154";
+//const char *server_ip_address           = "192.168.1.154";
 
 //Fablab IP from my laptop
-//const char *server_ip_address = "192.168.1.117";
+const char *server_ip_address = "192.168.1.117";
 
 //Matt's IP address for Drone
 //const char *server_ip_address = "192.168.42.33";
@@ -107,8 +106,8 @@ struct gpsData {
 };
 
 //queue<ccs811Data> ccs811Queue;
-queue<gpsData> gpsQueue;
-queue<groveData> groveQueue;
+stack<gpsData> gpsStack;
+stack<groveData> groveStack;
 
 void post_task(void *args) {
     groveData Grove;
@@ -118,9 +117,9 @@ void post_task(void *args) {
 
     while(1) {
         if(xSemaphoreTake(xSemaphore, (TickType_t) 10) == pdTRUE) {
-           if(!groveQueue.empty() && !gpsQueue.empty()) {
-                Grove = groveQueue.front();
-                GPS = gpsQueue.front();
+           if(!groveStack.empty() && !gpsStack.empty()) {
+                Grove = groveStack.top();
+                GPS = gpsStack.top();
 
 
                 msg = form_update_message(deviceID, Grove.co, Grove.nh3, Grove.no2, Grove.c3h8, Grove.c4h10, Grove.ch4, Grove.h2, Grove.c2h5oh, GPS.lat, GPS.lon);
@@ -144,7 +143,7 @@ void post_task(void *args) {
            
             xSemaphoreGive( xSemaphore);
           // printf("I am here\n");
-           vTaskDelay(100/portTICK_PERIOD_MS);
+           vTaskDelay(200/portTICK_PERIOD_MS);
         }
     }
 }
@@ -179,38 +178,32 @@ void grove_task(void *args) {
    groveData readGrove;
 
    while(1) {
-    readGrove.nh3 =gas.measure_NH3();
+    if(xSemaphoreTake( xSemaphore, ( TickType_t ) 10 ) == pdTRUE) {
+        readGrove.nh3 =gas.measure_NH3();
     //printf("The concentration of NH3 is ");
     //if(c>=0) printf("%f",c);
     //else printf("invalid");
     //printf(" ppm\n");
-    vTaskDelay(1);
 
-    readGrove.co = gas.measure_CO();
-    vTaskDelay(1);
+        readGrove.co = gas.measure_CO();
     
-    //    printf("The concetration of CO is ");
- //   if(readGrove.co>=0) printf("%f", readGrove.co);
- //   else printf("invalid");
- //   printf(" ppm\n");
+     //   printf("The concetration of CO is ");
+       // if(readGrove.co>=0) printf("%f", readGrove.co);
+       // else printf("invalid");
+       // printf(" ppm\n");
 
-    readGrove.no2 = gas.measure_NO2();
+        readGrove.no2 = gas.measure_NO2();
     
-    vTaskDelay(1);
-    readGrove.c3h8 = gas.measure_C3H8();
-    vTaskDelay(1);
-    readGrove.c4h10 = gas.measure_C4H10();
-    vTaskDelay(1);
+        readGrove.c3h8 = gas.measure_C3H8();
+        readGrove.c4h10 = gas.measure_C4H10();
 
-    readGrove.ch4 = gas.measure_CH4();
-    vTaskDelay(1);
-    readGrove.h2 = gas.measure_H2();
-    vTaskDelay(1);
-    readGrove.c2h5oh = gas.measure_C2H5OH();
-    vTaskDelay(1);
-    groveQueue.push(readGrove);
-    xSemaphoreGive(xSemaphore);
-    vTaskDelay(100/portTICK_PERIOD_MS);
+        readGrove.ch4 = gas.measure_CH4();
+        readGrove.h2 = gas.measure_H2();
+        readGrove.c2h5oh = gas.measure_C2H5OH();
+        groveStack.push(readGrove);
+        xSemaphoreGive(xSemaphore);
+        vTaskDelay(200/portTICK_PERIOD_MS);
+    }
   } 
 
 
@@ -222,13 +215,13 @@ void gps_task(void *args) {
     while(1) {
        if(xSemaphoreTake( xSemaphore, ( TickType_t ) 10 ) == pdTRUE) {
             get_gps_data(&myGPS);
-            //printf("%lf, %lf\n",myGPS.lat, myGPS.lon );
+      //      printf("%lf, %lf\n",myGPS.lat, myGPS.lon );
       
             readGPS.lat = myGPS.lat;
             readGPS.lon = myGPS.lon;
-            gpsQueue.push(readGPS);
+            gpsStack.push(readGPS);
             xSemaphoreGive( xSemaphore);
-            vTaskDelay(100/portTICK_PERIOD_MS);
+            vTaskDelay(200/portTICK_PERIOD_MS);
             //printf("hehe xD\n");
 
        }
@@ -237,7 +230,7 @@ void gps_task(void *args) {
 }
 
 extern "C" void app_main(void) {
-     initArduino();
+   //  initArduino();
      
      esp_err_t ret = nvs_flash_init();
       if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -246,7 +239,7 @@ extern "C" void app_main(void) {
       }
      ESP_ERROR_CHECK(ret);
     
-     ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
+     //ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
   
      app_wifi_initialise();
      app_wifi_wait_connected();
@@ -260,8 +253,7 @@ extern "C" void app_main(void) {
 
     gas.begin(0x04);
     gas.powerOn();
-  vTaskDelay(10);
-  gpsStatus = ESP_OK;
+    
     if(gpsStatus == ESP_OK){
       
       xSemaphore = xSemaphoreCreateMutex();
@@ -281,8 +273,6 @@ extern "C" void app_main(void) {
     } else {
       printf("fail to init sensor\n");
       printf("ESP ID: %d\n", deviceID);
-      pinMode(5,OUTPUT);
-      digitalWrite(5,HIGH);
 
     }
 }

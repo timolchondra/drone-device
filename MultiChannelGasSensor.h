@@ -1,40 +1,5 @@
-/*
-    MutichannelGasSensor.h
-    2015 Copyright (c) Seeed Technology Inc.  All right reserved.
-
-    Author: Jacky Zhang
-    2015-3-17
-    http://www.seeed.cc/
-    modi by Jack, 2015-8
-    
-    V2 by Loovee
-    2016-11-11
-
-    The MIT License (MIT)
-
-    Copyright (c) 2015 Seeed Technology Inc.
-
-    Permission is hereby granted, free of charge, to any person obtaining a copy
-    of this software and associated documentation files (the "Software"), to deal
-    in the Software without restriction, including without limitation the rights
-    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-    copies of the Software, and to permit persons to whom the Software is
-    furnished to do so, subject to the following conditions:
-
-    The above copyright notice and this permission notice shall be included in
-    all copies or substantial portions of the Software.
-
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-    THE SOFTWARE.
-*/
-
-#ifndef __MUTICHANNELGASSENSOR_H__
-#define __MUTICHANNELGASSENSOR_H__
+#ifndef __MULTICHANNELGASSENSOR_H__
+#define __MULTICHANNELGASSENSOR_H__
 
 #define DEFAULT_I2C_ADDR    0x04
 
@@ -66,9 +31,32 @@
 #define CMD_CONTROL_LED         10
 #define CMD_CONTROL_PWR         11
 
-enum{CO, NO2, NH3, C3H8, C4H10, CH4, H2, C2H5OH};
 
-class MutichannelGasSensor{
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/semphr.h"
+#define I2C_MASTER_NUM      I2C_NUM_0
+#define I2C_SDA_PIN         21
+#define I2C_SCL_PIN         22
+#define I2C_SPEED_STANDARD  100000
+#define WRITE_BIT           I2C_MASTER_WRITE
+#define READ_BIT            I2C_MASTER_READ
+#define ACK_CHECK_EN        0x1
+#define ACK_CHECK_DIS       0x0
+#define ACK_VAL             0x0
+#define NACK_VAL            0x1
+
+#define I2C_MASTER_TX_BUF_DISABLE   0
+#define I2C_MASTER_RX_BUF_DISABLE   0
+
+
+#include <iostream>
+
+enum{CO, NO2, NH3, C3H8, C4H10, CH4, H2, C2H5OH};
+esp_err_t i2c_master_read_slave(uint8_t *data_rd, size_t size);
+void init_I2C();
+
+class MultiChannelGasSensor{
 
 private:
 
@@ -90,9 +78,9 @@ public:
 
     inline unsigned int get_addr_dta(unsigned char addr_reg);
     inline unsigned int get_addr_dta(unsigned char addr_reg, unsigned char __dta);
-    inline void write_i2c(unsigned char addr, unsigned char *dta, unsigned char dta_len);
+    void write_i2c(unsigned char addr, unsigned char *dta, unsigned char dta_len);
 
-    void sendI2C(unsigned char dta);
+    esp_err_t sendI2C(unsigned char dta);
     int16_t readData(uint8_t cmd);
     int16_t readR0(void);
     int16_t readR(void);
@@ -102,7 +90,7 @@ public:
 
     void begin(int address);
     void begin();
-    void changeI2cAddr(uint8_t newAddr);
+    void changeI2CAddr(uint8_t newAddr);
     void powerOn(void);
     void powerOff(void);
     void doCalibrate(void);
@@ -136,13 +124,14 @@ public:
         write_i2c(i2cAddress, dta_test, 2);
     }
     
-    void display_eeprom();
-    void factory_setting();
-    void change_i2c_address(unsigned char addr);
-    unsigned char getVersion();
+   // void display_eeprom();
+   // void factory_setting();
+   // void change_i2c_address(unsigned char addr);
+   unsigned char getVersion();
+
 };
 
-extern MutichannelGasSensor gas;
+extern MultiChannelGasSensor gas;
 
 #endif
 
