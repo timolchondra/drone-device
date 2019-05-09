@@ -54,8 +54,7 @@ esp_err_t http_event_handler(esp_http_client_event_t *evt)
 	}
 	return ESP_OK;
 }
-
-char *form_update_message(int id, int co2, int tvoc, double lat, double lon)
+char *form_update_message(int deviceID, float co, float nh3, float no2, float c3h8, float c4h10, float ch4, float h2, float c2h5oh, double lat, double lon)
 {
 	cJSON *root = cJSON_CreateObject();
 	char *message; 

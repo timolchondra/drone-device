@@ -129,7 +129,8 @@ void post_task(void *args) {
                
                 groveStack.pop();
                 gpsStack.top();
-          
+         
+                msg = form_update_message(deviceID, Grove.co, Grove.nh3, Grove.no2, Grove.c3h8, Grove.c4h10, Grove.ch4, Grove.h2, Grove.c2h5oh, GPS.lat, GPS.lon);
                 //first post always has to send the message to /register to register the drone
 
                 if(firstPost == 0) {
