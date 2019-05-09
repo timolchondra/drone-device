@@ -19,7 +19,7 @@ using namespace std;
 void MultiChannelGasSensor::begin(int address) {
     __version = 1;
     r0_inited = false;
-    init_I2C();
+    init_i2c();
     i2cAddress = address;
     __version = getVersion(); 
 
@@ -37,7 +37,7 @@ unsigned char MultiChannelGasSensor::getVersion() {
 
 }
 
-void init_I2C() {
+void init_i2c() {
     i2c_port_t i2c_master_port = I2C_MASTER_NUM;
     i2c_config_t conf;
     conf.mode = I2C_MODE_MASTER;
@@ -64,7 +64,7 @@ void MultiChannelGasSensor::begin() {
 esp_err_t MultiChannelGasSensor::sendI2C(unsigned char dta) {
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
     i2c_master_start(cmd);
-    i2c_master_write_byte(cmd, (DEFAULT_I2C_ADDR << 1) | WRITE_BIT, ACK_CHECK_EN);
+    i2c_master_write_byte(cmd, (i2cAddress << 1) | WRITE_BIT, ACK_CHECK_EN);
     i2c_master_write_byte(cmd, (uint8_t)dta, ACK_CHECK_EN);
     i2c_master_stop(cmd);
     esp_err_t ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, 1000/ portTICK_RATE_MS);
@@ -81,7 +81,7 @@ unsigned int MultiChannelGasSensor::get_addr_dta(unsigned char addr_reg) {
 
    //now request from the address
    //Read two bytes from the slave and store it into raw (some buffer with arbitrary size 10)
-    esp_err_t ret = i2c_master_read_slave(raw, 2);
+    esp_err_t ret = i2c_master_read_slave(i2cAddress, raw, 2);
     if(ret != ESP_OK) {
         printf("I2C READ FAILED...%d\n", ret);
         return -1;
@@ -124,7 +124,7 @@ unsigned int MultiChannelGasSensor::get_addr_dta(unsigned char addr_reg) {
 unsigned int MultiChannelGasSensor::get_addr_dta(unsigned char addr_reg, unsigned char __dta) {
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
     i2c_master_start(cmd);
-    i2c_master_write_byte(cmd, (DEFAULT_I2C_ADDR << 1) | WRITE_BIT, ACK_CHECK_EN);
+    i2c_master_write_byte(cmd, (i2cAddress << 1) | WRITE_BIT, ACK_CHECK_EN);
     i2c_master_write_byte(cmd, addr_reg, ACK_CHECK_EN);
     i2c_master_write_byte(cmd, __dta, ACK_CHECK_EN);
     i2c_master_stop(cmd);
@@ -139,7 +139,7 @@ unsigned int MultiChannelGasSensor::get_addr_dta(unsigned char addr_reg, unsigne
     unsigned int dta = 0;
     unsigned char raw[10];
 
-    ret = i2c_master_read_slave(raw, 2);
+    ret = i2c_master_read_slave(i2cAddress, raw, 2);
 
     if (ret != ESP_OK) {
         printf("I2C failed to read...\n");
@@ -154,7 +154,6 @@ unsigned int MultiChannelGasSensor::get_addr_dta(unsigned char addr_reg, unsigne
     return dta;
 }
 int16_t MultiChannelGasSensor::readData(uint8_t cmd) {
-    uint16_t timeout = 0;
     uint8_t buffer[4];
     uint8_t checksum = 0;
     int16_t rtnData = 0;
@@ -162,7 +161,7 @@ int16_t MultiChannelGasSensor::readData(uint8_t cmd) {
     sendI2C(cmd);
     vTaskDelay(2/portTICK_RATE_MS);
 
-    i2c_master_read_slave(buffer, 4);
+    i2c_master_read_slave(i2cAddress, buffer, 4);
 
     checksum = (uint8_t)(buffer[0] + buffer[1] + buffer[2]);
     if(checksum != buffer[3])
@@ -319,7 +318,7 @@ float MultiChannelGasSensor::calcGas(int gas) {
 void MultiChannelGasSensor::changeI2CAddr(uint8_t newAddr) {
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
     i2c_master_start(cmd);
-    i2c_master_write_byte(cmd, (DEFAULT_I2C_ADDR << 1) | WRITE_BIT, ACK_CHECK_EN);
+    i2c_master_write_byte(cmd, (i2cAddress << 1) | WRITE_BIT, ACK_CHECK_EN);
     i2c_master_write_byte(cmd, newAddr, ACK_CHECK_EN);
     i2c_master_stop(cmd);
     i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, 1000 / portTICK_RATE_MS);
@@ -404,19 +403,19 @@ void MultiChannelGasSensor::powerOff() {
     else if(__version == 2) {
         dta_test[0] = 11;
         dta_test[1] = 0;
-        write_i2c(DEFAULT_I2C_ADDR, dta_test, 2);
+        write_i2c(i2cAddress, dta_test, 2);
 
     }
 }
 
-esp_err_t i2c_master_read_slave(uint8_t *data_rd, size_t size)
+esp_err_t i2c_master_read_slave(uint8_t i2cAddress,uint8_t *data_rd, size_t size)
 {
     if (size == 0) {
         return ESP_OK;
     }
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
     i2c_master_start(cmd);
-    i2c_master_write_byte(cmd, (DEFAULT_I2C_ADDR << 1) | READ_BIT, ACK_CHECK_EN);
+    i2c_master_write_byte(cmd, (i2cAddress << 1) | READ_BIT, ACK_CHECK_EN);
     if (size > 1) {
         i2c_master_read(cmd, data_rd, size - 1, (i2c_ack_type_t)ACK_VAL);
     }

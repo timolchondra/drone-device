@@ -53,8 +53,8 @@
 #include <iostream>
 
 enum{CO, NO2, NH3, C3H8, C4H10, CH4, H2, C2H5OH};
-esp_err_t i2c_master_read_slave(uint8_t *data_rd, size_t size);
-void init_I2C();
+esp_err_t i2c_master_read_slave(uint8_t i2cAddress, uint8_t *data_rd, size_t size);
+void init_i2c();
 
 class MultiChannelGasSensor{
 

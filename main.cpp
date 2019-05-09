@@ -68,13 +68,13 @@ SemaphoreHandle_t xSemaphore;
 //const char *server_ip_address           = "192.168.1.154";
 
 //Fablab IP from my laptop
-const char *server_ip_address = "192.168.1.117";
+//const char *server_ip_address = "192.168.1.117";
 
 //Matt's IP address for Drone
 //const char *server_ip_address = "192.168.42.33";
 
-
-//const char *server_ip_address = "192.168.42.77";
+//My IP address through the Drone
+const char *server_ip_address = "192.168.42.77";
 const int   server_webserver_port       = 8080;
 
 //static const char *TAG = "wifi station";
@@ -142,7 +142,6 @@ void post_task(void *args) {
 
            
             xSemaphoreGive( xSemaphore);
-          // printf("I am here\n");
            vTaskDelay(200/portTICK_PERIOD_MS);
         }
     }
@@ -239,14 +238,12 @@ extern "C" void app_main(void) {
       }
      ESP_ERROR_CHECK(ret);
     
-     //ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
   
      app_wifi_initialise();
      app_wifi_wait_connected();
 
     vTaskDelay(1);
    
- // init_i2c(); 
     esp_err_t gpsStatus = init_gps(&myGPS);
    // sensor = ccs811_init_sensor (I2C_MASTER_NUM, CCS811_I2C_ADDRESS_2);
    // ccs811_set_mode (sensor, ccs811_mode_1s);
@@ -254,15 +251,12 @@ extern "C" void app_main(void) {
     gas.begin(0x04);
     gas.powerOn();
     
+    vTaskDelay(1); 
     if(gpsStatus == ESP_OK){
       
       xSemaphore = xSemaphoreCreateMutex();
       printf("ESP ID: %d\n", deviceID);
       //xTaskCreatePinnedToCore(CCS811_task,"CCS811_task", TASK_STACK_DEPTH, NULL, 2, NULL,0);
-//      xTaskCreate(grove_task, "grove_task", TASK_STACK_DEPTH, NULL, 2, NULL);
-//      xTaskCreate(gps_task, "gps_task",TASK_STACK_DEPTH, NULL, 2, NULL);
-//      xTaskCreate(post_task, "post_task", 4042, NULL, 2, NULL);       //need larger stack for task to post data
-        
 
       xTaskCreatePinnedToCore(grove_task, "grove_task", TASK_STACK_DEPTH, NULL, 2, NULL, 1);
       xTaskCreatePinnedToCore(gps_task, "gps_task",TASK_STACK_DEPTH, NULL, 2, NULL,1);
