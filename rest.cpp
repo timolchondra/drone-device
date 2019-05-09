@@ -54,20 +54,26 @@ esp_err_t http_event_handler(esp_http_client_event_t *evt)
 	}
 	return ESP_OK;
 }
-char *form_update_message(int deviceID, float co, float nh3, float no2, float c3h8, float c4h10, float ch4, float h2, float c2h5oh, double lat, double lon)
+char *form_update_message(int id, float co, float nh3, float no2, float c3h8, float c4h10, float ch4, float h2, float c2h5oh, double lat, double lon)
 {
 	cJSON *root = cJSON_CreateObject();
 	char *message; 
 
-
-	/* create the message to the server */
-    cJSON_AddNumberToObject(root, "id", id);
-    cJSON_AddNumberToObject(root, "type", 3);
-    cJSON_AddNumberToObject(root, "lat", lat);
-    cJSON_AddNumberToObject(root, "lon", lon);
-    cJSON_AddNumberToObject(root, "co", co2);
-    cJSON_AddNumberToObject(root, "tvoc", tvoc);
-	message = cJSON_Print(root);
+     /* create the message to the server */
+     cJSON_AddNumberToObject(root, "id", id);
+     cJSON_AddNumberToObject(root, "type", 3);
+     cJSON_AddNumberToObject(root, "lat", lat);
+     cJSON_AddNumberToObject(root, "lon", lon);
+     cJSON_AddNumberToObject(root, "co", co);
+     cJSON_AddNumberToObject(root, "nh3", nh3);
+     cJSON_AddNumberToObject(root, "no2", no2);
+     cJSON_AddNumberToObject(root, "c3h8", c3h8);
+     cJSON_AddNumberToObject(root, "c4h10", c4h10);
+     cJSON_AddNumberToObject(root, "ch4", ch4);
+     cJSON_AddNumberToObject(root, "h2", h2);
+     cJSON_AddNumberToObject(root, "c2h5oh", c2h5oh);
+	
+     message = cJSON_Print(root);
 	cJSON_Delete(root);
 
 	return message;
