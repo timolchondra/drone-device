@@ -26,8 +26,8 @@
 //#define CONFIG_WIFI_SSID      "DroneNet"
 //#define CONFIG_WIFI_PASSWORD      ""
 
-//#define CONFIG_WIFI_SSID    "Bebop2-060087"
-//#define CONFIG_WIFI_PASSWORD ""
+#define CONFIG_WIFI_SSID    "Bebop2-060087"
+#define CONFIG_WIFI_PASSWORD ""
 
 #define CONFIG_WIFI_SSID    "Bebop2-058460"
 #define CONFIG_WIFI_PASSWORD ""
@@ -35,6 +35,7 @@
 
 //#define CONFIG_WIFI_SSID      "University of Washington"
 //#define CONFIG_WIFI_PASSWORD      ""
+
 static const char *TAG = "WIFI";
 
 /* FreeRTOS event group to signal when we are connected & ready to make a request */
