@@ -60,13 +60,8 @@ extern "C" {
 #define i2c_scl_pin     22
 #define i2c_sda_pin     21
 
-<<<<<<< HEAD
-
-using namespace std; 
-=======
 using namespace std;
 MultiChannelGasSensor gas;
->>>>>>> seeed
 struct gps_position myGPS; 
 static ccs811_sensor_t* sensor;
 SemaphoreHandle_t xSemaphore;
@@ -78,17 +73,10 @@ SemaphoreHandle_t xSemaphore;
 //const char *server_ip_address = "192.168.1.117";
 
 //Matt's IP address for Drone
-<<<<<<< HEAD
-const char *server_ip_address = "192.168.42.33";
-
-//my IP address for Drone
-//const char *server_ip_address = "192.168.42.77";
-=======
 //const char *server_ip_address = "192.168.42.33";
 
 //My IP address through the Drone
 const char *server_ip_address = "192.168.42.77";
->>>>>>> seeed
 const int   server_webserver_port       = 8080;
 
 int deviceID = 1;
@@ -99,7 +87,7 @@ struct ccs811Data {
     int CO2;
 };
 
-/*
+
 struct groveData {
     float co;
     float nh3;
@@ -112,28 +100,21 @@ struct groveData {
 
 
 };
-*/
+
 
 struct gpsData {
     double lat;
     double lon;
 };
 
-<<<<<<< HEAD
-queue<ccs811Data> ccs811Queue;
-queue<gpsData> gpsQueue;
-//queue<groveData> groveQueue;
-
-=======
 //queue<ccs811Data> ccs811Queue;
 stack<gpsData> gpsStack;
 stack<groveData> groveStack;
->>>>>>> seeed
 
 void post_task(void *args) {
- //   groveData Grove;
+    groveData Grove;
     gpsData GPS;
-    ccs811Data CCS811;
+//    ccs811Data CCS811;
 
     char *msg;
     int firstPost = 0;
@@ -146,7 +127,9 @@ void post_task(void *args) {
 
                 //printf("%s\n", msg);
                
-
+                groveStack.pop();
+                gpsStack.top();
+          
                 //first post always has to send the message to /register to register the drone
 
                 if(firstPost == 0) {
@@ -256,7 +239,7 @@ void connectToWifi() {
     }
     ESP_ERROR_CHECK(ret);
     
-    ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
+    //ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
   
     app_wifi_initialise();
     app_wifi_wait_connected();
