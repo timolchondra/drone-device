@@ -13,7 +13,7 @@
  *   Iso-butane C4H10 >1000ppm
  *
  *
- */ 
+ */
 
 
 #ifdef __cplusplus
@@ -67,7 +67,7 @@ static ccs811_sensor_t* sensor;
 SemaphoreHandle_t xSemaphore;
 
 //const char *server_ip_address = "10.0.0.229";
-const char *server_ip_address           = "192.168.1.154";
+//const char *server_ip_address           = "192.168.1.154";
 
 //Fablab IP from my laptop
 //const char *server_ip_address = "192.168.1.117";
@@ -76,7 +76,7 @@ const char *server_ip_address           = "192.168.1.154";
 //const char *server_ip_address = "192.168.42.33";
 
 //My IP address through the Drone
-//const char *server_ip_address = "192.168.42.77";
+const char *server_ip_address = "192.168.42.77";
 const int   server_webserver_port       = 8080;
 
 int deviceID = 1;
@@ -246,6 +246,7 @@ void connectToWifi() {
     app_wifi_wait_connected();
     
 }
+
 extern "C" void app_main(void) {
     //initArduino();
 

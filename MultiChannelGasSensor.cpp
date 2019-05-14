@@ -122,20 +122,24 @@ unsigned int MultiChannelGasSensor::get_addr_dta(unsigned char addr_reg) {
 }
 
 unsigned int MultiChannelGasSensor::get_addr_dta(unsigned char addr_reg, unsigned char __dta) {
+    //store data that we want to write in a buffer
+    uint8_t data_write[2];
+    data_write[0] = addr_reg;
+    data_write[1] = __dta;
+
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
     i2c_master_start(cmd);
     i2c_master_write_byte(cmd, (i2cAddress << 1) | WRITE_BIT, ACK_CHECK_EN);
-    i2c_master_write_byte(cmd, addr_reg, ACK_CHECK_EN);
-    i2c_master_write_byte(cmd, __dta, ACK_CHECK_EN);
+    i2c_master_write(cmd, data_write, 2, ACK_CHECK_EN);
     i2c_master_stop(cmd);
     esp_err_t ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, 1000/portTICK_RATE_MS);
     i2c_cmd_link_delete(cmd);
-   
+
     if (ret != ESP_OK) {
         printf("I2C Failed to read\n");
         return -1;
     }
-    
+
     unsigned int dta = 0;
     unsigned char raw[10];
 
@@ -310,22 +314,11 @@ float MultiChannelGasSensor::calcGas(int gas) {
         default:
             break;
     }
-    
+
     if(2==__version)ledOff();
     return isnan(c)?-3:c;
 }
 
-void MultiChannelGasSensor::changeI2CAddr(uint8_t newAddr) {
-    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
-    i2c_master_start(cmd);
-    i2c_master_write_byte(cmd, (i2cAddress << 1) | WRITE_BIT, ACK_CHECK_EN);
-    i2c_master_write_byte(cmd, newAddr, ACK_CHECK_EN);
-    i2c_master_stop(cmd);
-    i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, 1000 / portTICK_RATE_MS);
-    i2c_cmd_link_delete(cmd);
-
-
-}
 void MultiChannelGasSensor::doCalibrate(void) {
     if(1==__version) {
     START:
@@ -353,7 +346,7 @@ void MultiChannelGasSensor::doCalibrate(void) {
             a0 = get_addr_dta(CH_VALUE_NH3);
             a1 = get_addr_dta(CH_VALUE_CO);
             a2 = get_addr_dta(CH_VALUE_NO2);
-            
+
             printf("%d\t%d\t%d\t\n",a0,a1,a2);
             ledOn();
             int cnt = 0;
@@ -361,13 +354,13 @@ void MultiChannelGasSensor::doCalibrate(void) {
                 if((a0 - get_addr_dta(CH_VALUE_NH3)) > 2 || (get_addr_dta(CH_VALUE_NH3) - a0) > 2)cnt++;
                 if((a1 - get_addr_dta(CH_VALUE_CO)) > 2 || (get_addr_dta(CH_VALUE_CO) - a1) > 2)cnt++;
                 if((a2 - get_addr_dta(CH_VALUE_NO2)) > 2 || (get_addr_dta(CH_VALUE_NO2) - a2) > 2)cnt++;
-                
+        
                 if(cnt>5) {
                     break;
                 }
                 vTaskDelay(1000/portTICK_RATE_MS);
             }
-                        
+        
             ledOff();
             if(cnt <= 5)break;
             vTaskDelay(200/portTICK_RATE_MS);
@@ -424,4 +417,24 @@ esp_err_t i2c_master_read_slave(uint8_t i2cAddress,uint8_t *data_rd, size_t size
     esp_err_t ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, 1000 / portTICK_RATE_MS);
     i2c_cmd_link_delete(cmd);
     return ret;
+}
+
+void MultiChannelGasSensor::changeI2CAddr(uint8_t newAddr) {
+    uint8_t data_write[2];
+    data_write[0] = 0x23;
+    data_write[1] = newAddr;
+
+    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
+    i2c_master_start(cmd);
+    i2c_master_write_byte(cmd, (i2cAddress << 1) | READ_BIT, ACK_CHECK_EN);
+    i2c_master_write(cmd, data_write, 2, ACK_CHECK_EN);
+    i2c_master_stop(cmd);
+    esp_err_t ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, 1000 / portTICK_RATE_MS);
+    i2c_cmd_link_delete(cmd);
+
+    if (ret != ESP_OK) {
+      printf("I2C Failed\n");
+      return;
+    }
+    i2cAddress = newAddr;
 }

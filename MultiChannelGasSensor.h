@@ -62,12 +62,12 @@ private:
 
     int __version;
     unsigned char dta_test[20];
-    
+
     unsigned int readChAdcValue(int ch);
     unsigned int adcValueR0_NH3_Buf;
     unsigned int adcValueR0_CO_Buf;
     unsigned int adcValueR0_NO2_Buf;
-    
+
 public:
 
     uint8_t i2cAddress;     //I2C address of this MCU
@@ -85,7 +85,7 @@ public:
     int16_t readR0(void);
     int16_t readR(void);
     float calcGas(int gas);
-    
+
 public:
 
     void begin(int address);
@@ -94,7 +94,7 @@ public:
     void powerOn(void);
     void powerOff(void);
     void doCalibrate(void);
-    
+
     //get gas concentration, unit: ppm
     float measure_CO(){return calcGas(CO);}
     float measure_NO2(){return calcGas(NO2);}
@@ -104,7 +104,7 @@ public:
     float measure_CH4(){return calcGas(CH4);}
     float measure_H2(){return calcGas(H2);}
     float measure_C2H5OH(){return calcGas(C2H5OH);}
-    
+
     float getR0(unsigned char ch);      // 0:CH3, 1:CO, 2:NO2
     float getRs(unsigned char ch);      // 0:CH3, 1:CO, 2:NO2
 
@@ -116,17 +116,17 @@ public:
         dta_test[1] = 1;
         write_i2c(i2cAddress, dta_test, 2);
     }
-    
+
     void ledOff()
     {
         dta_test[0] = CMD_CONTROL_LED;
         dta_test[1] = 0;
         write_i2c(i2cAddress, dta_test, 2);
     }
-    
+
    // void display_eeprom();
    // void factory_setting();
-   // void change_i2c_address(unsigned char addr);
+   //void change_i2c_address(unsigned char addr);
    unsigned char getVersion();
 
 };
